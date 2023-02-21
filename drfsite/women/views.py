@@ -15,13 +15,31 @@ from .serializers import WomenSerializer
 
 class WomenAPIView(APIView):
     def get(self, request):
-        womens = Women.objects.all().values('title', 'content', 'category')
-        return Response({'womens': womens})
+        w = Women.objects.all()
+        return Response({'womens': WomenSerializer(w, many=True).data})
 
     def post(self, request):
-        data_to_model = Women.objects.create(
-            title=request.data['title'],
-            content=request.data['content'],
-            category_id=request.data['category_id']
-        )
-        return Response({'created woman': model_to_dict(data_to_model)})
+        serializer = WomenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+        return Response({'created woman': serializer.data})
+
+
+    def put(self, request, *args, **kwargs):
+        pk = kwargs.get('pk', None)
+        if not pk:
+            return Response({'error': 'Put method not allowed'})
+
+        try:
+            instance = Women.objects.get(pk=pk)
+        except:
+            return Response({'error': "Women Doesn't exist"})
+
+        serializer = WomenSerializer(data=request.data, instance=instance)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'update': serializer.data})
+
+
+
